@@ -322,9 +322,18 @@ footer::after{content:"";position:absolute;right:-140px;bottom:-180px;width:540p
   .photo-stage::before,.nav::after,.grad,.cta-tag i{animation:none}
   *{transition-duration:.01ms!important}
 }
+
+/* ===== AI neural-network background ===== */
+#ai-bg{position:fixed;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none;display:block}
+/* let the animation show through the section backgrounds (falls back to solid if color-mix is unsupported) */
+.skills-sec{background:color-mix(in srgb,var(--sec-skills) 55%,transparent)}
+.why-sec{background:color-mix(in srgb,var(--sec-why) 55%,transparent)}
+.work-sec{background:color-mix(in srgb,var(--sec-work) 55%,transparent)}
+.awards-sec{background:color-mix(in srgb,var(--sec-why) 55%,transparent)}
 </style>
 </head>
 <body>
+<canvas id="ai-bg" aria-hidden="true"></canvas>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
     <symbol id="i-moon" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
@@ -480,7 +489,7 @@ footer::after{content:"";position:absolute;right:-140px;bottom:-180px;width:540p
       <p class="lead">I focus on AI that is practical, maintainable and aligned with the way a business actually works.</p>
     </div>
     <div class="bento">
-        <div class="why-card glow feature reveal d0"><span class="num">01</span><div><h3>AI/ML Expertise</h3><p>Hands-on experience with machine learning, deep learning, NLP, RAG, OCR and generative AI.</p></div></div>
+        <div class="why-card glow reveal d0"><span class="num">01</span><div><h3>AI/ML Expertise</h3><p>Hands-on experience with machine learning, deep learning, NLP, RAG, OCR and generative AI.</p></div></div>
         <div class="why-card glow  reveal d1"><span class="num">02</span><div><h3>Full Stack Delivery</h3><p>I build the model and the Django and React.js app around it, so the work reaches users.</p></div></div>
         <div class="why-card glow  reveal d2"><span class="num">03</span><div><h3>Problem Solving</h3><p>From messy data and model accuracy to deployment issues on AWS.</p></div></div>
         <div class="why-card glow reveal d3"><span class="num">04</span><div><h3>Production Ready</h3><p>Live projects built to run reliably, not just to demo.</p></div></div>
@@ -808,6 +817,185 @@ footer::after{content:"";position:absolute;right:-140px;bottom:-180px;width:540p
     }, { threshold: 0.15 });
     revealEls.forEach(function (el) { io.observe(el); });
   });
+</script>
+
+<script>
+/* ===== AI background: neural network with data pulses ===== */
+(function () {
+  var cv = document.getElementById('ai-bg');
+  if (!cv || !cv.getContext) return;
+  var ctx = cv.getContext('2d');
+  var root = document.documentElement;
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var PAL_L = [[42, 86, 232], [18, 32, 63], [124, 58, 237]];      // light: blue, navy, violet
+  var PAL_D = [[109, 148, 255], [167, 139, 250], [34, 211, 238]]; // dark: sky blue, violet, cyan
+  var LABELS = ['Artificial Intelligence', 'Deep Learning', 'Machine Learning', 'Django', 'ReactJS', 'AWS', 'GitHub', 'Jira', 'AI Agents', 'Agentic AI', 'Classification', 'Regression', 'CI/CD Pipelines',
+    'RAG', 'LLM', 'Natural Language Processing', 'OCR', 'CNN', 'Transformer', 'Embeddings', 'Vector DB', 'Fine-tune', 'OpenAI', 'Gemini', 'Image Generation'];
+
+  var W = 0, H = 0, dpr = 1, LINK = 140, small = false;
+  var nodes = [], pulses = [];
+  var mouse = { x: -9999, y: -9999 };
+  var scrollY = window.scrollY || 0;
+  var lastT = 0, lastSpawn = 0, tm = 0;
+
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+
+  function init() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    small = W < 768;
+    LINK = small ? 105 : 140;
+    var count = Math.max(24, Math.min(small ? 40 : 100, Math.round(W * H / 17000)));
+    var labelCount = small ? 5 : LABELS.length;
+    nodes = []; pulses = [];
+    for (var i = 0; i < count; i++) {
+      nodes.push({
+        x: Math.random() * W, y: Math.random() * H,
+        vx: reduce ? 0 : rnd(-.28, .28), vy: reduce ? 0 : rnd(-.28, .28),
+        r: rnd(1.8, 3.3), d: rnd(.15, .75),
+        ci: Math.floor(Math.random() * 3),
+        label: i < labelCount ? LABELS[i % LABELS.length] : null,
+        px: 0, py: 0
+      });
+      if (i < labelCount) nodes[i].r = rnd(4, 5.2);
+    }
+    if (reduce) draw(0);
+  }
+
+  function wrap(v, max) { v = v % max; return v < 0 ? v + max : v; }
+
+  function draw(dt) {
+    var dark = root.classList.contains('dark');
+    var pal = dark ? PAL_D : PAL_L;
+    var lineA = dark ? .65 : .55;
+    var nodeA = dark ? 1 : .92;
+    var labelA = dark ? .85 : .78;
+    var i, j, n, m;
+
+    ctx.clearRect(0, 0, W, H);
+    tm += dt * .01;
+    var rad = Math.max(W, H) * .38;
+    for (i = 0; i < 3; i++) {
+      var ox = W * (.5 + .4 * Math.sin(i * 2.1 + tm * (.6 + i * .25)));
+      var oy = H * (.5 + .4 * Math.cos(i * 1.7 + tm * (.5 + i * .2)));
+      var oc = pal[i === 1 ? 2 : 0];
+      var g = ctx.createRadialGradient(ox, oy, 0, ox, oy, rad);
+      g.addColorStop(0, 'rgba(' + oc[0] + ',' + oc[1] + ',' + oc[2] + ',' + (dark ? .20 : .14) + ')');
+      g.addColorStop(1, 'rgba(' + oc[0] + ',' + oc[1] + ',' + oc[2] + ',0)');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    }
+
+    // update + parallax position (deeper nodes drift slower on scroll)
+    for (i = 0; i < nodes.length; i++) {
+      n = nodes[i];
+      n.x = wrap(n.x + n.vx * dt, W);
+      n.y = wrap(n.y + n.vy * dt, H);
+      n.px = n.x;
+      n.py = wrap(n.y - scrollY * n.d * .35, H);
+      // gentle push away from the cursor
+      var dx = n.px - mouse.x, dy = n.py - mouse.y, md = Math.sqrt(dx * dx + dy * dy);
+      if (md < 150 && md > 0.1) {
+        var f = (1 - md / 150) * 16;
+        n.px += dx / md * f; n.py += dy / md * f;
+      }
+    }
+
+    // links
+    ctx.lineWidth = 1.4;
+    for (i = 0; i < nodes.length; i++) {
+      n = nodes[i];
+      for (j = i + 1; j < nodes.length; j++) {
+        m = nodes[j];
+        var ax = n.px - m.px, ay = n.py - m.py;
+        if (ax > LINK || ax < -LINK || ay > LINK || ay < -LINK) continue;
+        var d = Math.sqrt(ax * ax + ay * ay);
+        if (d < LINK) {
+          ctx.strokeStyle = 'rgba(' + pal[n.ci][0] + ',' + pal[n.ci][1] + ',' + pal[n.ci][2] + ',' + (lineA * (.3 + .7 * (1 - d / LINK))).toFixed(3) + ')';
+          ctx.beginPath(); ctx.moveTo(n.px, n.py); ctx.lineTo(m.px, m.py); ctx.stroke();
+        }
+      }
+      // cursor links
+      var cx = n.px - mouse.x, cy = n.py - mouse.y, cd = Math.sqrt(cx * cx + cy * cy);
+      if (cd < 170) {
+        ctx.strokeStyle = (dark ? 'rgba(34,211,238,' : 'rgba(42,86,232,') + ((dark ? .9 : .75) * (1 - cd / 170)).toFixed(3) + ')';
+        ctx.beginPath(); ctx.moveTo(n.px, n.py); ctx.lineTo(mouse.x, mouse.y); ctx.stroke();
+      }
+    }
+
+    // nodes + labels
+    ctx.font = '600 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+    ctx.textBaseline = 'middle';
+    for (i = 0; i < nodes.length; i++) {
+      n = nodes[i];
+      ctx.fillStyle = 'rgba(' + pal[n.ci][0] + ',' + pal[n.ci][1] + ',' + pal[n.ci][2] + ',' + nodeA + ')';
+      ctx.beginPath(); ctx.arc(n.px, n.py, n.r, 0, 6.2832); ctx.fill();
+      if (n.label) {
+        ctx.strokeStyle = 'rgba(' + pal[n.ci][0] + ',' + pal[n.ci][1] + ',' + pal[n.ci][2] + ',' + labelA + ')';
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(n.px, n.py, n.r + 4, 0, 6.2832); ctx.stroke();
+        ctx.fillStyle = dark ? 'rgba(220,230,255,' + labelA + ')' : 'rgba(18,32,63,' + labelA + ')';
+        ctx.fillText(n.label, n.px + n.r + 10, n.py);
+      }
+    }
+
+    // data pulses travelling along links
+    for (i = pulses.length - 1; i >= 0; i--) {
+      var p = pulses[i];
+      p.t += p.s * dt;
+      var ddx = p.a.px - p.b.px, ddy = p.a.py - p.b.py;
+      if (p.t >= 1 || ddx * ddx + ddy * ddy > LINK * LINK * 1.4) { pulses.splice(i, 1); continue; }
+      var x = p.a.px + (p.b.px - p.a.px) * p.t, y = p.a.py + (p.b.py - p.a.py) * p.t;
+      var tx = p.a.px + (p.b.px - p.a.px) * Math.max(0, p.t - .18), ty = p.a.py + (p.b.py - p.a.py) * Math.max(0, p.t - .18);
+      var col = pal[p.a.ci];
+      ctx.strokeStyle = 'rgba(' + col[0] + ',' + col[1] + ',' + col[2] + ',' + (dark ? .9 : .7) + ')';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(x, y); ctx.stroke();
+      ctx.fillStyle = 'rgba(' + col[0] + ',' + col[1] + ',' + col[2] + ',' + (dark ? .30 : .22) + ')';
+      ctx.beginPath(); ctx.arc(x, y, 9, 0, 6.2832); ctx.fill();
+      ctx.fillStyle = dark ? 'rgba(255,255,255,.95)' : 'rgba(' + col[0] + ',' + col[1] + ',' + col[2] + ',1)';
+      ctx.beginPath(); ctx.arc(x, y, 2.8, 0, 6.2832); ctx.fill();
+    }
+  }
+
+  function spawnPulse() {
+    if (pulses.length >= (small ? 8 : 16)) return;
+    var a = nodes[Math.floor(Math.random() * nodes.length)], near = [];
+    for (var i = 0; i < nodes.length; i++) {
+      var b = nodes[i];
+      if (b === a) continue;
+      var dx = a.px - b.px, dy = a.py - b.py;
+      if (dx * dx + dy * dy < LINK * LINK) near.push(b);
+    }
+    if (near.length) pulses.push({ a: a, b: near[Math.floor(Math.random() * near.length)], t: 0, s: rnd(.012, .026) });
+  }
+
+  function frame(t) {
+    requestAnimationFrame(frame);
+    var dt = Math.min(3, (t - lastT) / 16.67 || 1);
+    lastT = t;
+    if (t - lastSpawn > 320) { spawnPulse(); lastSpawn = t; }
+    draw(dt);
+  }
+
+  // events
+  var rz;
+  window.addEventListener('resize', function () { clearTimeout(rz); rz = setTimeout(init, 150); });
+  window.addEventListener('scroll', function () { scrollY = window.scrollY; if (reduce) draw(0); }, { passive: true });
+  if (!reduce) {
+    window.addEventListener('pointermove', function (e) { mouse.x = e.clientX; mouse.y = e.clientY; }, { passive: true });
+    document.addEventListener('mouseleave', function () { mouse.x = mouse.y = -9999; });
+    window.addEventListener('touchend', function () { mouse.x = mouse.y = -9999; }, { passive: true });
+  } else {
+    // static mode: redraw when the theme changes
+    new MutationObserver(function () { draw(0); }).observe(root, { attributes: true, attributeFilter: ['class'] });
+  }
+
+  init();
+  if (!reduce) requestAnimationFrame(frame);
+})();
 </script>
 </body>
 </html>
